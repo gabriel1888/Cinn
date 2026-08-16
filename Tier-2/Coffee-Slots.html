@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cinn — Coffee Slots</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-green: #4a7a5e; --dark-green: #3d6a52; --white: #FFFFFF; --warning-red: #FF6B6B; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+        body { font-family: "ITC Franklin Gothic LT", "Oswald", "Franklin Gothic Medium", Arial, sans-serif; background-color: var(--bg-green); color: var(--white); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; overscroll-behavior: none; }
+        .app-container { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; min-height: 600px; text-align: center; }
+        #play-state, #gate-state, #result-state { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; animation: fadeIn 0.4s ease-in-out; }
+        #gate-state, #result-state { display: none; justify-content: center; }
+        h1 { font-size: 2.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; line-height: 1; }
+        .subtitle { font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; opacity: 0.8; }
+        .tracker { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 50px; margin-bottom: 24px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        .slots-frame { background: var(--dark-green); border: 6px solid var(--white); border-radius: 14px; padding: 14px; display: flex; gap: 10px; margin-bottom: 24px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); position: relative; }
+        .reel { width: 96px; height: 130px; background: rgba(255,255,255,0.92); border-radius: 6px; overflow: hidden; position: relative; }
+        .reel-window { position: relative; width: 100%; height: 100%; overflow: hidden; }
+        .reel-strip { display: flex; flex-direction: column; align-items: center; will-change: transform; }
+        .reel-strip img { width: 80px; height: 110px; object-fit: contain; margin: 10px 0; flex-shrink: 0; }
+        .reel-mask-top, .reel-mask-bottom { position: absolute; left: 0; width: 100%; height: 30px; pointer-events: none; z-index: 2; }
+        .reel-mask-top { top: 0; background: linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0)); }
+        .reel-mask-bottom { bottom: 0; background: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0.95)); }
+        .reel.win .reel-window { box-shadow: inset 0 0 0 3px var(--warning-red); }
+        .spin-btn { background-color: var(--white); color: var(--bg-green); border: none; padding: 20px 60px; font-size: 1.5rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-family: inherit; border-radius: 4px; transition: transform 0.1s; margin-bottom: 12px; }
+        .spin-btn:active { transform: scale(0.98); }
+        .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .spin-hint { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; }
+        .attempt-dots { display: flex; gap: 10px; margin-top: 16px; }
+        .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--white); opacity: 0.4; transition: all 0.2s; }
+        .dot.hit { background: var(--white); opacity: 1; }
+        .dot.miss { background: var(--warning-red); border-color: var(--warning-red); opacity: 1; }
+        .gate-title { font-size: 2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 16px; line-height: 1.1; }
+        .won-prize-display { width: 140px; height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; background: rgba(255,255,255,0.1); border-radius: 12px; }
+        .won-prize-display img { max-width: 90%; max-height: 90%; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3)); }
+        .gate-subtitle { font-size: 1rem; opacity: 0.8; margin-bottom: 30px; line-height: 1.4; text-transform: uppercase; letter-spacing: 1px; }
+        .opt-in-form { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .consent-row { display: flex; align-items: flex-start; gap: 12px; text-align: left; font-size: 0.7rem; line-height: 1.4; color: rgba(255,255,255,0.7); margin-bottom: 4px; text-transform: uppercase; cursor: pointer; }
+        .consent-row input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 20px; height: 20px; margin-top: 2px; border: 2px solid var(--white); border-radius: 4px; background-color: transparent; cursor: pointer; position: relative; transition: all 0.2s; }
+        .consent-row input[type="checkbox"]:checked { background-color: var(--white); border-color: var(--white); }
+        .consent-row input[type="checkbox"]:checked::after { content: ""; position: absolute; left: 5px; top: 1px; width: 6px; height: 11px; border: solid var(--bg-green); border-width: 0 3px 3px 0; transform: rotate(45deg); }
+        .consent-row label { cursor: pointer; } .consent-row a { color: var(--white); text-decoration: underline; }
+        .email-input { width: 100%; padding: 18px; border: 2px solid var(--white); font-size: 16px; font-family: inherit; color: var(--white); background: transparent; outline: none; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+        .email-input::placeholder { color: rgba(255,255,255,0.6); }
+        .submit-btn { background-color: var(--white); color: var(--bg-green); border: none; padding: 18px; font-size: 1.2rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-family: inherit; }
+        .result-title { font-size: 2.2rem; font-weight: 700; text-transform: uppercase; margin-bottom: 10px; line-height: 1; }
+        .marketing-text { font-size: 1rem; margin-bottom: 30px; opacity: 0.8; }
+        .discount-code { background: rgba(255,255,255,0.1); padding: 30px; margin: 10px 0; border: 2px dashed var(--white); width: 100%; }
+        .code-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; opacity: 0.7; }
+        .code-text { font-size: 2.5rem; font-weight: 700; letter-spacing: 4px; color: var(--white); word-wrap: break-word; }
+        .security-warning { margin-top: 16px; font-size: 0.8rem; font-weight: 700; color: var(--warning-red); text-transform: uppercase; letter-spacing: 1px; }
+        .verify-line { margin-top: 12px; font-size: 0.78rem; opacity: 0.7; letter-spacing: 1px; text-transform: lowercase; }
+        .verify-line .verify-label { text-transform: uppercase; font-weight: 700; opacity: 0.8; }
+        .expiry-badge { margin-top: 8px; font-size: 0.8rem; font-weight: 600; opacity: 0.8; text-transform: uppercase; }
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(74, 122, 94, 0.3); border-radius: 50%; border-top-color: var(--bg-green); animation: spin 0.8s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } } @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div id="play-state">
+            <h1>COFFEE SLOTS</h1>
+            <div class="subtitle">MATCH 3 TO WIN</div>
+            <div class="tracker"><span>SPINS: <span id="attempt-count">0</span>/3</span></div>
+            <div class="slots-frame">
+                <div class="reel" id="reel-0"><div class="reel-window"><div class="reel-strip"></div></div><div class="reel-mask-top"></div><div class="reel-mask-bottom"></div></div>
+                <div class="reel" id="reel-1"><div class="reel-window"><div class="reel-strip"></div></div><div class="reel-mask-top"></div><div class="reel-mask-bottom"></div></div>
+                <div class="reel" id="reel-2"><div class="reel-window"><div class="reel-strip"></div></div><div class="reel-mask-top"></div><div class="reel-mask-bottom"></div></div>
+            </div>
+            <button class="spin-btn" id="spin-btn">SPIN</button>
+            <div class="spin-hint">REELS STOP AUTOMATICALLY</div>
+            <div class="attempt-dots" id="attempt-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+        <div id="gate-state">
+            <div class="gate-title" id="gate-title">JACKPOT!</div>
+            <div class="won-prize-display" id="won-prize-display"></div>
+            <div class="gate-subtitle" id="gate-subtitle">Enter your email to unlock your 10% off code.</div>
+            <form class="opt-in-form" id="email-form">
+                <div class="consent-row"><input type="checkbox" id="marketing-consent" name="marketing-consent" required><label for="marketing-consent">I agree to receive promotional emails, offers, and updates from <span id="cafe-name-placeholder">Maple Street Coffee</span>. I can unsubscribe at any time. See our <a href="#" onclick="return false;">Privacy Policy</a>.</label></div>
+                <input type="email" class="email-input" id="email" placeholder="YOUR EMAIL" required autocomplete="email">
+                <button type="submit" class="submit-btn" id="submit-btn">UNLOCK REWARD</button>
+            </form>
+        </div>
+        <div id="result-state">
+            <div class="result-title">REWARD<br>UNLOCKED</div>
+            <div class="marketing-text">Enjoy 10% off your next visit!</div>
+            <div class="discount-code"><div class="code-label">YOUR 1-USE CODE:</div><div class="code-text" id="final-code">LOADING...</div><div class="expiry-badge" id="expiry-date">Valid for 7 days</div><div class="verify-line"><span class="verify-label">Verify:</span> <span id="verify-email"></span></div></div>
+            <div class="security-warning">SINGLE-USE ONLY. BARISTA MUST VERIFY.</div>
+        </div>
+    </div>
+    <script>
+        const MAKE_WEBHOOK_URL = 'https://hook.eu2.make.com/wjl53jpu3lwmwaxr5w7hd2fx3bwgmrim';
+        const CAFE_NAME = 'Maple Street Coffee';
+        const cafeNamePlaceholder = document.getElementById('cafe-name-placeholder');
+        if (cafeNamePlaceholder) cafeNamePlaceholder.textContent = CAFE_NAME;
+        const prizes = [
+            { name: "Matcha Latte", src: "https://i.ibb.co/TDC1PTNX/pngtree-iced-matcha-latte-in-a-plastic-cup-png-image-16393408.png" },
+            { name: "Iced Coffee", src: "https://i.ibb.co/0yznsCGP/pngtree-cold-brewed-iced-latte-coffee-on-plastic-cup-side-view-generative-png-image-10154258.png" },
+            { name: "Espresso", src: "https://i.ibb.co/KzzxHtQf/pngtree-hot-cappuccino-coffee-cup-with-latte-art-isolated-on-transparent-background-png-image-196075.webp" },
+            { name: "Cheesecake", src: "https://i.ibb.co/cPVqnwJ/pngtree-slice-of-pistachio-cheesecake-png-image-15962270.png" },
+            { name: "Croissant", src: "https://i.ibb.co/sdkNJv61/Gemini-Generated-Image-fssy3zfssy3zfssy-1.png" }
+        ];
+        const SLOT_H = 130;
+        const IMG_H = 130;
+        const STRIDE = IMG_H;
+        const REPEATS = 8;
+        const MAX_ATTEMPTS = 3;
+        const spinBtn = document.getElementById('spin-btn');
+        const attemptCountEl = document.getElementById('attempt-count');
+        const dots = document.querySelectorAll('#attempt-dots .dot');
+        const reels = [0, 1, 2].map(i => document.getElementById('reel-' + i));
+        const strips = reels.map(r => r.querySelector('.reel-strip'));
+        let attempts = 0;
+        let gameWon = false;
+        let wonPrize = prizes[Math.floor(Math.random() * prizes.length)];
+        let spinning = false;
+        let scheduledLandings = [null, null, null];
+        let spin = { active: false, raf: null, offsets: [0,0,0], velocities: [9,9,9], stopped: [false,false,false], landing: [null,null,null] };
+        function buildStrip(strip) {
+            strip.innerHTML = '';
+            for (let r = 0; r < REPEATS; r++) {
+                prizes.forEach(p => {
+                    const img = document.createElement('img');
+                    img.src = p.src; img.alt = p.name; img.referrerPolicy = 'no-referrer';
+                    img.onerror = function() { this.style.opacity = '0'; };
+                    strip.appendChild(img);
+                });
+            }
+        }
+        strips.forEach(buildStrip);
+        function setOffset(idx, y) {
+            spin.offsets[idx] = y;
+            strips[idx].style.transform = `translateY(${-(y % (prizes.length * STRIDE))}px)`;
+        }
+        // Decide the outcome of this spin up front based on attempt number:
+        // attempts 1 & 2 are always a miss; attempt 3 always lands three-of-a-kind.
+        function pickLandingsForAttempt(attempt) {
+            if (attempt >= MAX_ATTEMPTS) {
+                const winIdx = Math.floor(Math.random() * prizes.length);
+                wonPrize = prizes[winIdx];
+                return [winIdx, winIdx, winIdx];
+            }
+            // Guaranteed miss: pick three distinct-ish indices with no full match.
+            let r;
+            do {
+                r = [0,1,2].map(() => Math.floor(Math.random() * prizes.length));
+            } while (r[0] === r[1] && r[1] === r[2]);
+            return r;
+        }
+        // Convert a desired prize index into an absolute strip offset the reel can ease to.
+        function landingOffsetFor(idx, desiredIdx) {
+            const baseCycle = Math.floor(spin.offsets[idx] / (prizes.length * STRIDE)) + 1;
+            const cyclesAhead = 3 + idx; // later reels travel further before stopping
+            return ((baseCycle + cyclesAhead) * prizes.length + desiredIdx) * STRIDE;
+        }
+        function startSpin() {
+            if (spin.active || gameWon || attempts >= MAX_ATTEMPTS) return;
+            attempts++;
+            attemptCountEl.textContent = attempts;
+            spin.active = true;
+            spin.stopped = [false, false, false];
+            spin.landing = [null, null, null];
+            spin.velocities = [9, 9, 9];
+            reels.forEach(r => r.classList.remove('win'));
+            spinBtn.textContent = 'SPINNING...';
+            spinBtn.disabled = true;
+            // Pre-compute where each reel must land to deliver the scripted outcome.
+            const desired = pickLandingsForAttempt(attempts);
+            scheduledLandings = desired.map((d, i) => landingOffsetFor(i, d));
+            // Release the reels to their landings with a staggered delay (no manual stop).
+            [0, 1, 2].forEach((i) => {
+                setTimeout(() => { if (spin.active) spin.landing[i] = scheduledLandings[i]; }, 700 + i * 450);
+            });
+            tick();
+        }
+        function tick() {
+            if (!spin.active) return;
+            let allDone = true;
+            for (let i = 0; i < 3; i++) {
+                if (spin.stopped[i]) continue;
+                allDone = false;
+                let target = spin.landing[i];
+                if (target === null) {
+                    setOffset(i, spin.offsets[i] + spin.velocities[i]);
+                } else {
+                    const cur = spin.offsets[i];
+                    const remaining = target - cur;
+                    if (remaining > 1.5) {
+                        setOffset(i, cur + Math.max(remaining * 0.18, 0.8));
+                    } else {
+                        setOffset(i, target);
+                        spin.stopped[i] = true;
+                    }
+                }
+            }
+            if (allDone) { finishSpin(); return; }
+            spin.raf = requestAnimationFrame(tick);
+        }
+        function finishSpin() {
+            spin.active = false;
+            if (spin.raf) cancelAnimationFrame(spin.raf);
+            spinBtn.textContent = 'SPIN';
+            const results = scheduledLandings.map(t => Math.round(t / STRIDE) % prizes.length);
+            const allMatch = results[0] === results[1] && results[1] === results[2];
+            const dot = dots[attempts - 1];
+            if (allMatch) {
+                dot.classList.add('hit');
+                reels.forEach(r => r.classList.add('win'));
+                gameWon = true;
+                setTimeout(endGame, 1000);
+            } else {
+                dot.classList.add('miss');
+                // Spin 3 is always a win by construction, so reaching here means attempt 1 or 2 — let them spin again.
+                spinBtn.disabled = false;
+            }
+        }
+        function endGame() {
+            const won = gameWon;
+            document.getElementById('gate-title').innerText = won ? `JACKPOT!` : `SO CLOSE!`;
+            document.getElementById('gate-subtitle').innerText = won
+                ? 'The reels lined up. Enter your email to claim your treat.'
+                : 'Three spins, no match. We will still slide you a consolation code — drop your email.';
+            document.getElementById('won-prize-display').innerHTML = won
+                ? `<img src="${wonPrize.src}" referrerPolicy="no-referrer" alt="${wonPrize.name}" onerror="this.style.display='none'">`
+                : '';
+            setTimeout(() => {
+                document.getElementById('play-state').style.display = 'none';
+                document.getElementById('gate-state').style.display = 'flex';
+            }, 400);
+        }
+        spinBtn.addEventListener('click', () => { if (!spin.active) startSpin(); });
+        function generateReward() { const prefix = CAFE_NAME.replace(/[^a-zA-Z]/g, '').substring(0, 2).toUpperCase(); const randomNum = Math.floor(1000 + Math.random() * 9000); const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let suffix = ''; for (let i = 0; i < 2; i++) { suffix += chars.charAt(Math.floor(Math.random() * chars.length)); } const finalCode = `${prefix}-${randomNum}-${suffix}`; const today = new Date(); const expireDay = new Date(today); expireDay.setDate(today.getDate() + 7); const options = { month: 'short', day: 'numeric' }; const formattedExpiry = expireDay.toLocaleDateString('en-GB', options); document.getElementById('final-code').innerText = finalCode; document.getElementById('expiry-date').innerText = `Valid for 7 days (Expires ${formattedExpiry})`; }
+        document.getElementById('email-form').addEventListener('submit', async (e) => {
+            e.preventDefault(); const email = document.getElementById('email').value; const marketingConsent = document.getElementById('marketing-consent').checked; const submitBtn = document.getElementById('submit-btn');
+            submitBtn.innerHTML = '<span class="loading-spinner"></span>'; submitBtn.disabled = true; generateReward();
+            function maskEmail(em){if(!em||typeof em!=='string')return'';const a=em.indexOf('@');if(a<1)return em;const l=em.slice(0,a),d=em.slice(a);if(l.length<=2)return l+d;return l.slice(0,2)+'•'.repeat(l.length-2)+d;}
+            document.getElementById('verify-email').innerText = maskEmail(email);
+            const payload = { cafe: CAFE_NAME, email: email, prize_won: wonPrize.name, attempts: attempts, result: gameWon ? "win" : "close-call", marketing_consent: marketingConsent, code: document.getElementById('final-code').innerText, date: new Date().toISOString(), source: "Coffee Slots" };
+            try { await fetch(MAKE_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), mode: 'no-cors' }); } catch (error) { console.error('Webhook error:', error); } finally { document.getElementById('gate-state').style.display = 'none'; document.getElementById('result-state').style.display = 'flex'; }
+        });
+    </script>
+</body>
+</html>
