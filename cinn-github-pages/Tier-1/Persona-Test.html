@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>What Your Coffee Says About You</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-green: #4a7a5e;
+            --dark-green: #3d6a52;
+            --white: #FFFFFF;
+            --warning-red: #FF6B6B;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+        body { font-family: "ITC Franklin Gothic LT", "Oswald", "Franklin Gothic Medium", Arial, sans-serif; background-color: var(--bg-green); color: var(--white); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; overscroll-behavior: none; }
+        .app-container { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; min-height: 600px; text-align: center; }
+        
+        /* States */
+        #quiz-state, #gate-state, #result-state { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; animation: fadeIn 0.4s ease-in-out; }
+        #gate-state, #result-state { display: none; justify-content: center; }
+        
+        /* Typography */
+        h1 { font-size: clamp(1.5rem, 6vw, 2rem); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; line-height: 1.1; text-align: center; }
+        .subtitle { font-size: clamp(0.75rem, 3vw, 0.9rem); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 40px; opacity: 0.8; text-align: center; }
+        
+        /* Progress Bar */
+        .progress-container { width: 100%; height: 4px; background-color: rgba(255,255,255,0.2); margin-bottom: 32px; overflow: hidden; }
+        .progress-bar { height: 100%; background-color: var(--white); width: 0%; transition: width 0.4s ease; }
+
+        .question-meta { font-size: clamp(0.7rem, 2.5vw, 0.8rem); font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.7); margin-bottom: 12px; letter-spacing: 2px; }
+        .question-text { font-size: clamp(1.3rem, 5vw, 1.8rem); margin-bottom: 40px; line-height: 1.1; font-weight: 700; text-transform: uppercase; }
+        
+        .options-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .quiz-option { width: 100%; text-align: left; background-color: transparent; border: 2px solid var(--white); padding: 18px; font-size: 1rem; font-family: inherit; font-weight: 500; color: var(--white); cursor: pointer; transition: all 0.2s ease; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase; letter-spacing: 0.5px; touch-action: manipulation; }
+        .quiz-option:active { background-color: var(--white); color: var(--bg-green); }
+        .quiz-option.selected { background-color: var(--white); color: var(--bg-green); }
+
+        /* Gate State */
+        .gate-icon { width: 100px; height: 100px; margin-bottom: 24px; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2)); opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .gate-icon.loaded { opacity: 1; }
+        .gate-teaser { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.7); margin-bottom: 8px; }
+        .gate-title { font-size: clamp(1.5rem, 6vw, 1.8rem); font-weight: 700; margin-bottom: 12px; text-transform: uppercase; line-height: 1.1; }
+        .gate-subtitle { font-size: clamp(0.75rem, 3vw, 0.9rem); color: rgba(255,255,255,0.8); margin-bottom: 32px; line-height: 1.4; font-weight: 400; max-width: 320px; text-transform: uppercase; }
+        
+        .opt-in-form { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .consent-row { display: flex; align-items: flex-start; gap: 12px; text-align: left; font-size: 0.7rem; line-height: 1.4; color: rgba(255,255,255,0.7); margin-bottom: 4px; text-transform: uppercase; cursor: pointer; }
+        .consent-row input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 20px; height: 20px; margin-top: 2px; border: 2px solid var(--white); border-radius: 4px; background-color: transparent; cursor: pointer; position: relative; transition: all 0.2s; }
+        .consent-row input[type="checkbox"]:checked { background-color: var(--white); border-color: var(--white); }
+        .consent-row input[type="checkbox"]:checked::after { content: ""; position: absolute; left: 5px; top: 1px; width: 6px; height: 11px; border: solid var(--bg-green); border-width: 0 3px 3px 0; transform: rotate(45deg); }
+        .consent-row label { cursor: pointer; }
+        .consent-row a { color: var(--white); text-decoration: underline; }
+        
+        .email-input { width: 100%; padding: 16px; border: 2px solid var(--white); font-size: 16px; font-family: inherit; color: var(--white); background: transparent; outline: none; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+        .email-input::placeholder { color: rgba(255,255,255,0.6); }
+        .email-input:focus { background-color: rgba(255,255,255,0.1); }
+        .submit-btn { background-color: var(--white); color: var(--bg-green); border: 2px solid var(--white); padding: 16px; font-size: 1.2rem; font-weight: 700; cursor: pointer; font-family: inherit; text-transform: uppercase; letter-spacing: 2px; touch-action: manipulation; }
+        .submit-btn:active { transform: scale(0.98); }
+        
+        /* Result State */
+        .result-img { width: 120px; height: 120px; margin-bottom: 16px; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2)); opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .result-img.loaded { opacity: 1; }
+        .result-title { font-size: clamp(1.8rem, 7vw, 2.2rem); font-weight: 700; margin-bottom: 12px; text-transform: uppercase; line-height: 1; }
+        .result-desc { font-size: clamp(0.8rem, 3.5vw, 0.95rem); color: rgba(255,255,255,0.8); line-height: 1.5; margin-bottom: 32px; font-weight: 400; max-width: 320px; text-transform: uppercase; }
+        
+        .discount-code { background: rgba(255,255,255,0.1); padding: 24px; margin: 10px 0; border: 2px dashed var(--white); width: 100%; }
+        .code-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; opacity: 0.7; }
+        .code-text { font-size: clamp(1.4rem, 6vw, 1.8rem); font-weight: 700; letter-spacing: 3px; color: var(--white); word-wrap: break-word; }
+        .security-warning { margin-top: 16px; font-size: 0.8rem; font-weight: 700; color: var(--warning-red); text-transform: uppercase; letter-spacing: 1px; }
+        .verify-line { margin-top: 12px; font-size: 0.78rem; opacity: 0.7; letter-spacing: 1px; text-transform: lowercase; }
+        .verify-line .verify-label { text-transform: uppercase; font-weight: 700; opacity: 0.8; }
+        .expiry-badge { margin-top: 8px; font-size: 0.8rem; font-weight: 600; opacity: 0.8; text-transform: uppercase; }
+        
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(74, 122, 94, 0.3); border-radius: 50%; border-top-color: var(--bg-green); animation: spin 0.8s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>The Coffee Persona</h1>
+            <div class="subtitle">What your order says about you</div>
+        </div>
+
+        <div class="content">
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <!-- QUIZ STATE -->
+            <div id="quiz-state">
+                <div class="question-meta" id="question-num">Question 1 of 3</div>
+                <div class="question-text" id="trivia-question">Loading...</div>
+                <div class="options-grid" id="options-grid"></div>
+            </div>
+
+            <!-- GATE STATE -->
+            <div id="gate-state">
+                <img id="gate-icon-el" src="" alt="Coffee Cup" class="gate-icon" referrerPolicy="no-referrer" width="100" height="100" onload="this.classList.add('loaded')">
+                <div class="gate-teaser">RESULT TEASER</div>
+                <div class="gate-title" id="gate-title-el">You're a Purist</div>
+                <div class="gate-subtitle">You value tradition, simplicity, and a perfectly executed classic. Enter your email to unlock your full personality profile & claim your 10% off code.</div>
+                
+                <form class="opt-in-form" id="email-form">
+                    <div class="consent-row">
+                        <input type="checkbox" id="marketing-consent" name="marketing-consent" required>
+                        <label for="marketing-consent">I agree to receive promotional emails, offers, and updates from <span id="cafe-name-placeholder">Maple Street Coffee</span>. I can unsubscribe at any time. See our <a href="#" onclick="return false;">Privacy Policy</a>.</label>
+                    </div>
+                    <input type="email" class="email-input" id="email" placeholder="YOUR EMAIL ADDRESS" required autocomplete="email">
+                    <button type="submit" class="submit-btn" id="submit-btn">Unlock My Profile</button>
+                </form>
+            </div>
+
+            <!-- RESULT STATE -->
+            <div id="result-state">
+                <img id="result-image-el" src="" alt="Your Persona" class="result-img" referrerPolicy="no-referrer" width="120" height="120" onload="this.classList.add('loaded')">
+                <div class="result-title" id="result-title-el">The Purist</div>
+                <div class="result-desc" id="result-desc-el">Loading description...</div>
+                
+                <div class="discount-code">
+                    <div class="code-label">YOUR 1-USE CODE:</div>
+                    <div class="code-text" id="dynamic-code">GENERATING...</div>
+                    <div class="expiry-badge" id="expiry-date"></div>
+                    <div class="verify-line"><span class="verify-label">Verify:</span> <span id="verify-email"></span></div>
+                </div>
+                <div class="security-warning">SINGLE-USE ONLY. BARISTA MUST VERIFY.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WEBHOOK_URL = 'https://hook.eu2.make.com/wjl53jpu3lwmwaxr5w7hd2fx3bwgmrim';
+        const CAFE_NAME = 'Maple Street Coffee';
+        const cafeNamePlaceholder = document.getElementById('cafe-name-placeholder');
+        if (cafeNamePlaceholder) cafeNamePlaceholder.textContent = CAFE_NAME;
+
+        const ESPRESSO_IMG = "https://i.ibb.co/KzzxHtQf/pngtree-hot-cappuccino-coffee-cup-with-latte-art-isolated-on-transparent-background-png-image-196075.webp";
+        const MATCHA_IMG = "https://i.ibb.co/TDC1PTNX/pngtree-iced-matcha-latte-in-a-plastic-cup-png-image-16393408.png";
+        const CHEESECAKE_IMG = "https://i.ibb.co/cPVqnwJ/pngtree-slice-of-pistachio-cheesecake-png-image-15962270.png";
+
+        const quizData = [
+            { 
+                q: "It’s 7 AM. How do you take your coffee?", 
+                options: [
+                    { text: "Black, no sugar. Don't mess with it.", persona: "purist" },
+                    { text: "Oat milk and a pump of vanilla.", persona: "aesthete" },
+                    { text: "Over ice, regardless of the weather.", persona: "maverick" }
+                ]
+            },
+            { 
+                q: "When the barista calls your name, you are...", 
+                options: [
+                    { text: "Already walking out the door.", persona: "purist" },
+                    { text: "Taking a photo for my story.", persona: "aesthete" },
+                    { text: "Reading a book in the corner.", persona: "maverick" }
+                ]
+            },
+            { 
+                q: "What’s your stance on decaf?", 
+                options: [
+                    { text: "Pointless. I need the rocket fuel.", persona: "purist" },
+                    { text: "Fine, as long as it tastes good.", persona: "aesthete" },
+                    { text: "I drink it exclusively after 2 PM.", persona: "maverick" }
+                ]
+            }
+        ];
+
+        const personas = {
+            "purist": {
+                title: "The Purist",
+                img: ESPRESSO_IMG,
+                desc: "You are focused, driven, and appreciate the finer details. You don't have time for frills—you just want quality. People admire your no-nonsense approach to life (and your impeccable taste in espresso)."
+            },
+            "aesthete": {
+                title: "The Aesthete",
+                img: CHEESECAKE_IMG,
+                desc: "You believe life is meant to be savored, styled, and shared. You treat yourself well and find joy in the little rituals. Your vibe attracts your tribe, and a slice of cheesecake is your ultimate canvas."
+            },
+            "maverick": {
+                title: "The Maverick",
+                img: MATCHA_IMG,
+                desc: "You are calm, cool, and collected. You don't follow trends—you set them. While others rush, you observe. Your matcha is as chilled and steadfast as your personality."
+            }
+        };
+
+        function generateRandomCode(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = 'PERSONA-';
+            for (let i = 0; i < length; i++) { result += chars.charAt(Math.floor(Math.random() * chars.length)); }
+            return result;
+        }
+
+        function getExpiryDate(daysFromNow) {
+            const date = new Date();
+            date.setDate(date.getDate() + daysFromNow);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        let currentQuestion = 0;
+        let personaScores = { purist: 0, aesthete: 0, maverick: 0 };
+
+        const quizState = document.getElementById('quiz-state');
+        const gateState = document.getElementById('gate-state');
+        const resultState = document.getElementById('result-state');
+        const progressBar = document.getElementById('progress-bar');
+
+        function loadQuestion() {
+            const qData = quizData[currentQuestion];
+            const progress = ((currentQuestion) / quizData.length) * 100;
+            progressBar.style.width = `${progress}%`;
+
+            document.getElementById('question-num').innerText = `Question ${currentQuestion + 1} of ${quizData.length}`;
+            document.getElementById('trivia-question').innerText = qData.q;
+
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = '';
+
+            qData.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.innerHTML = `<span>${option.text}</span> <span>→</span>`;
+                btn.onclick = () => handleAnswer(option.persona, btn);
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(persona, clickedBtn) {
+            document.querySelectorAll('.quiz-option').forEach(b => b.style.pointerEvents = 'none');
+            clickedBtn.classList.add('selected');
+            personaScores[persona]++;
+
+            setTimeout(() => {
+                currentQuestion++;
+                if (currentQuestion < quizData.length) {
+                    loadQuestion();
+                } else {
+                    calculateResult();
+                }
+            }, 400);
+        }
+
+        function calculateResult() {
+            let winningPersona = "purist"; 
+            let highestScore = 0;
+            for (const [persona, score] of Object.entries(personaScores)) {
+                if (score > highestScore) {
+                    highestScore = score;
+                    winningPersona = persona;
+                }
+            }
+
+            const gateIcon = document.getElementById('gate-icon-el');
+            gateIcon.classList.remove('loaded');
+            gateIcon.src = personas[winningPersona].img;
+
+            // FIXED GRAMMAR: Now reads "YOU'RE THE PURIST"
+            document.getElementById('gate-title-el').innerText = `You're ${personas[winningPersona].title}`;
+            window.finalPersona = winningPersona;
+
+            progressBar.style.width = '100%';
+            quizState.style.display = 'none';
+            gateState.style.display = 'flex';
+        }
+
+        document.getElementById('email-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const marketingConsent = document.getElementById('marketing-consent').checked;
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.innerHTML = '<span class="loading-spinner"></span>';
+            submitBtn.disabled = true;
+
+            function maskEmail(email) {
+                if (!email || typeof email !== 'string') return '';
+                const atIdx = email.indexOf('@');
+                if (atIdx < 1) return email;
+                const local = email.slice(0, atIdx);
+                const domain = email.slice(atIdx);
+                if (local.length <= 2) return local + domain;
+                return local.slice(0, 2) + '•'.repeat(local.length - 2) + domain;
+            }
+            document.getElementById('verify-email').innerText = maskEmail(document.getElementById('email').value);
+
+            const personaData = personas[window.finalPersona];
+            const uniqueCode = generateRandomCode(6);
+            const expiryDate = getExpiryDate(7);
+
+            const payload = {
+                email: email,
+                cafe: CAFE_NAME,
+                persona: personaData.title,
+                date: new Date().toISOString(),
+                source: "Coffee Persona Quiz",
+                marketingConsent: marketingConsent,
+                uniqueCode: uniqueCode,
+                codeExpires: expiryDate
+            };
+
+            try { 
+                await fetch(WEBHOOK_URL, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload), 
+                    mode: 'no-cors' 
+                }); 
+            } catch (error) { 
+                console.error('Webhook error:', error); 
+            } finally {
+                const resultImg = document.getElementById('result-image-el');
+                resultImg.classList.remove('loaded');
+                resultImg.src = personaData.img;
+
+                document.getElementById('result-title-el').innerText = personaData.title;
+                document.getElementById('result-desc-el').innerText = personaData.desc;
+                document.getElementById('dynamic-code').innerText = uniqueCode;
+                document.getElementById('expiry-date').innerText = `Valid for 7 days (Expires ${expiryDate})`;
+
+                gateState.style.display = 'none';
+                resultState.style.display = 'flex';
+            }
+        });
+
+        loadQuestion();
+    </script>
+</body>
+</html>
