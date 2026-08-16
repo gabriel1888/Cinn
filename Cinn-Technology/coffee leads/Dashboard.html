@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinn — Leads Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-green: #4a7a5e;
+            --dark-green: #3d6a52;
+            --white: #FFFFFF;
+            --warning-red: #E53935;
+            /* Readable surfaces */
+            --page-bg: #F4F2EC;        /* warm off-white page */
+            --surface: #FFFFFF;        /* white cards */
+            --surface-alt: #FAF8F3;    /* subtle card variant */
+            --ink: #1F2A24;            /* near-black slate text */
+            --ink-soft: #5A6660;       /* muted body text */
+            --ink-faint: #8A938E;      /* hints / meta */
+            --line: #E3E0D6;           /* hairline borders */
+            --line-strong: #C9C5B6;
+            --accent: var(--bg-green); /* pistachio accent */
+            --accent-soft: #E8F0EB;    /* pale green tint */
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            background: var(--page-bg);
+            color: var(--ink);
+            font-family: "Oswald", Arial, sans-serif;
+            font-weight: 400;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 1024px;
+            margin: 0 auto;
+            padding: clamp(16px, 4vw, 32px);
+        }
+        /* ===== Header ===== */
+        header {
+            margin-bottom: 28px;
+            background: var(--accent);
+            color: var(--white);
+            padding: clamp(20px, 4vw, 28px) clamp(16px, 4vw, 32px);
+            border-radius: 12px;
+        }
+        h1 {
+            font-size: clamp(1.8rem, 5vw, 2.6rem);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            line-height: 1.05;
+        }
+        h1 .dash { color: rgba(255,255,255,0.55); font-weight: 400; }
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            margin-top: 14px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.9);
+        }
+        .stats .pip { display: inline-flex; align-items: center; gap: 6px; }
+        .stats strong { font-weight: 700; color: var(--white); }
+        .stats .warn { color: #FFD9D9; }
+        .stats .warn strong { color: #FFE5E5; }
+        .meta {
+            margin-top: 10px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.7);
+        }
+        /* ===== Focus banner ===== */
+        .focus-banner {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px 14px;
+            background: var(--accent);
+            color: var(--white);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .focus-banner .focus-label {
+            font-size: 0.62rem;
+            letter-spacing: 0.14em;
+            opacity: 0.7;
+            font-weight: 500;
+        }
+        .focus-banner .focus-value {
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            font-size: 0.95rem;
+        }
+        .focus-banner .focus-note {
+            width: 100%;
+            font-size: 0.62rem;
+            opacity: 0.75;
+            margin-top: 2px;
+            letter-spacing: 0.05em;
+        }
+        /* ===== Action checklist ===== */
+        .action-card {
+            background: var(--surface);
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 24px;
+            border: 1px solid var(--line);
+            box-shadow: 0 1px 2px rgba(31,42,36,0.04);
+        }
+        .section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--ink-soft);
+            margin-bottom: 14px;
+            font-weight: 500;
+        }
+        .checklist { list-style: none; }
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--line);
+        }
+        .checklist li:last-child { border-bottom: none; }
+        .checklist input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 22px; height: 22px;
+            min-width: 22px;
+            border: 2px solid var(--line-strong);
+            border-radius: 5px;
+            cursor: pointer;
+            position: relative;
+            margin-top: 0;
+            background: var(--surface);
+            transition: all 0.15s;
+        }
+        .checklist input[type="checkbox"]:hover { border-color: var(--accent); }
+        .checklist input[type="checkbox"]:checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        .checklist input[type="checkbox"]:checked::after {
+            content: "✓";
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--white);
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .checklist label {
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            line-height: 1.35;
+            cursor: pointer;
+            flex: 1;
+            padding: 1px 0;
+            color: var(--ink);
+            transition: color 0.15s;
+        }
+        .checklist li.done label { color: var(--ink-faint); text-decoration: line-through; }
+        .checklist .priority { color: var(--warning-red); font-weight: 500; font-size: 0.7rem; margin-left: 8px; vertical-align: middle; }
+        /* ===== Filter bar ===== */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            color: var(--ink-soft);
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 8px 14px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .filter-btn:hover { border-color: var(--line-strong); color: var(--ink); }
+        .filter-btn.active { background: var(--accent); color: var(--white); border-color: var(--accent); }
+        /* ===== Lead grid ===== */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 14px;
+        }
+        .card {
+            background: var(--surface);
+            border-radius: 10px;
+            padding: 16px 18px;
+            border: 1px solid var(--line);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 1px 2px rgba(31,42,36,0.04);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .card:hover { border-color: var(--line-strong); box-shadow: 0 2px 6px rgba(31,42,36,0.08); }
+        .card.hidden { display: none; }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .card-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            line-height: 1.15;
+            color: var(--ink);
+        }
+        .score {
+            min-width: 44px;
+            height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .score.high { background: var(--accent); color: var(--white); }
+        .score.mid { background: var(--accent-soft); color: var(--accent); }
+        .score.low { background: var(--warning-red); color: var(--white); }
+        .cluster-tag {
+            display: inline-block;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--ink-soft);
+            background: var(--surface-alt);
+            border: 1px solid var(--line);
+            padding: 4px 9px;
+            border-radius: 4px;
+            align-self: flex-start;
+        }
+        .trigger {
+            font-size: 0.82rem;
+            line-height: 1.4;
+            color: var(--ink);
+            padding: 8px 10px;
+            background: var(--surface-alt);
+            border-left: 2px solid var(--accent);
+            border-radius: 0 4px 4px 0;
+        }
+        .status-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .status-row .ok { color: var(--ink); }
+        .status-row .warn { color: var(--warning-red); font-weight: 500; }
+        .status-row .muted { color: var(--ink-faint); }
+        .tier-badge {
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        /* ===== DM scripts expandable ===== */
+        .scripts-toggle {
+            background: var(--surface-alt);
+            border: 1px solid var(--line);
+            color: var(--ink);
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 7px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s;
+            align-self: flex-start;
+        }
+        .scripts-toggle:hover { background: var(--accent-soft); border-color: var(--accent); }
+        .scripts-toggle::before { content: "▸ "; }
+        .scripts-toggle.open::before { content: "▾ "; }
+        .scripts {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .scripts.open { display: flex; }
+        .script-block {
+            background: var(--surface-alt);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            cursor: pointer;
+            transition: all 0.15s;
+            position: relative;
+            color: var(--ink);
+        }
+        .script-block:hover { border-color: var(--accent); background: var(--accent-soft); }
+        .script-block .kind {
+            display: block;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--ink-soft);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .script-block .copy-hint {
+            display: block;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--ink-faint);
+            margin-top: 6px;
+        }
+        .script-block.copied { background: var(--accent); border-color: var(--accent); color: var(--white); }
+        .script-block.copied .kind, .script-block.copied .copy-hint { color: rgba(255,255,255,0.85); }
+        .no-script {
+            font-size: 0.72rem;
+            color: var(--ink-faint);
+            font-style: italic;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        /* ===== Footer ===== */
+        footer {
+            margin-top: 32px;
+            padding-top: 20px;
+            border-top: 1px solid var(--line);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--ink-soft);
+            line-height: 1.7;
+        }
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--line-strong);
+        }
+        footer a:hover { border-bottom-style: solid; }
+        footer .recompile {
+            display: block;
+            margin-top: 14px;
+            padding: 12px 14px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+            font-size: 0.7rem;
+            color: var(--ink-soft);
+        }
+        footer .recompile strong { color: var(--ink); }
+        footer .recompile code {
+            background: var(--surface-alt);
+            border: 1px solid var(--line);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: var(--ink);
+            font-family: "Consolas", "Monaco", monospace;
+        }
+        @media (max-width: 520px) {
+            .grid { grid-template-columns: 1fr; }
+            .stats { font-size: 0.75rem; gap: 6px 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Cinn <span class="dash">—</span> Leads Dashboard</h1>
+            <div class="stats" id="stats"></div>
+            <div class="meta" id="meta"></div>
+        </header>
+
+        <div class="focus-banner">
+            <span class="focus-label">Active Focus</span>
+            <span class="focus-value">🔥 CHAIN NEARBY — INDIES THREATENED BY CHAIN OPENINGS</span>
+            <span class="focus-note">All leads below are cafes where a chain (Blank Street, Gail's, Greggs, etc.) opened or is opening nearby</span>
+        </div>
+
+        <div class="action-card">
+            <div class="section-label">Today's Action</div>
+            <ul class="checklist" id="checklist"></ul>
+        </div>
+
+        <div class="filters" id="filters">
+            <button class="filter-btn active" data-filter="chain_nearby">All Chain Threats</button>
+            <button class="filter-btn" data-filter="ready">✅ Ready (IG confirmed)</button>
+            <button class="filter-btn" data-filter="needs-handle">⚠️ Needs Handle</button>
+        </div>
+
+        <div class="grid" id="grid"></div>
+
+        <footer>
+            <div>
+                <a href="../_automation/state/lead-pipeline.csv">Pipeline CSV</a> ·
+                <a href="Cinn-Coffee-Leads.md">Full leads doc</a> ·
+                <a href="../_automation/output/2026-08-10-trigger-brief.md">Slow-season brief</a> ·
+                <a href="../_automation/output/2026-08-10-trigger-chain-nearby-brief.md">Chain-nearby brief</a>
+            </div>
+            <div class="recompile">
+                <strong>To refresh after a new automation run:</strong><br>
+                <code>node _automation/state/compile-dashboard.js</code><br>
+                Reads the CSV + markdown, rebuilds this file in place. Takes &lt;1 second.
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ===== BAKED-IN DATA (regenerated by compile-dashboard.js) =====
+        const LAST_UPDATED = "2026-08-10";
+        const LEADS = [
+            {name:"Brown & Green Cafe",address:"Crystal Palace Triangle",website:"https://www.brownandgreencafe.com",instagram:"@brownandgreencafe",email:"",score:10,tier:3,hook:"Gail's Bakery opening on Westow Hill (former Coopers pub). Owner Laura Tilli quoted in Time Out: \"worried it's going to blow everybody out of the water\". Live, named, dated trigger — strongest possible Cinn fit.",status:"trigger-drafted",strategy:"chain_nearby",trigger:"Gail's Bakery opening on Westow Hill",scripts:{"first":"The Fair Trade lineup + the park room is a serious operation — Crystal Palace is lucky to have you. Read the piece on the Gail's opening — respect for saying it out loud, most wouldn't. — Gab, Cinn","soft":"Fwiw the thing nobody's saying about Gail's is they don't win on coffee — they win on data. Every customer who taps their app is one they don't pay to reach again. The counter you already have can do the same thing, gamified. One customer plays, two come back. Curious, what's the biggest counter headache right now? — Gab, Cinn","reengage":"Hey Laura — hope the autumn's been kind post-Gail's opening. Saw [recent post] and had to say the [detail] looks ace. If a counter game would help take the edge off the new competition, I'll mock one up for the Triangle room free. No pitch. — Gab"}},
+            {name:"Roasted Bean",address:"Crystal Palace Triangle",website:"",instagram:"@roastedbeancrystalpalace",email:"",score:9,tier:2,hook:"Gail's Bakery opening on Westow Hill. Triangle indie; partners with Lomond Coffee (specialty signal). Expanding vegan range = upsell angle.",status:"trigger-drafted",strategy:"chain_nearby",trigger:"Gail's Bakery opening on Westow Hill",scripts:{"first":"The Lomond partnership is a sharp move 👀 and the vegan pan aux raisin looks unreal. How long have you been on the Triangle? — Gab, Cinn","soft":"Makes sense — you've earned the regulars. Fwiw the Gail's opening down the road is the moment a referral game earns its keep: one customer plays, sends a treat to a friend who's never been, two come back. They've got an app; you've got the better coffee. Closes the gap. Curious, what's the biggest counter headache right now? — Gab, Cinn","reengage":"Hey — hope the autumn's picking up post-Gail's. Saw [recent post] and the [vegan special] looks ace. — Gab"}},
+            {name:"Pique Cafe",address:"Crystal Palace",website:"",instagram:"",email:"",score:8,tier:2,hook:"Crystal Palace Gail's opening on Westow Hill. Listed in Time Out CP cafe roundup. ⚠️ no public IG/email confirmed — do NOT guess; resolve on walk-through or skip.",status:"trigger-drafted",strategy:"chain_nearby",trigger:"Gail's Bakery opening on Westow Hill",scripts:{"first":"The Triangle room looks ace from the Time Out piece. How long has Pique been on the scene? — Gab, Cinn","soft":"Fwiw the Gail's opening is the moment a counter game pays for itself — the wheel lands on your best item, they play, they win, they come back. They have an app; you have the better coffee. Curious, what's the biggest counter headache right now? — Gab, Cinn","reengage":""}},
+            {name:"Blowing Dandelion",address:"Crystal Palace",website:"",instagram:"",email:"",score:8,tier:2,hook:"Crystal Palace Gail's opening on Westow Hill. Listed in StreetLife Stories CP roundup. ⚠️ no public IG/email confirmed — resolve before outreach.",status:"trigger-drafted",strategy:"chain_nearby",trigger:"Gail's Bakery opening on Westow Hill",scripts:{"first":"Saw you in the StreetLife Crystal Palace piece — the room looks lovely. How long have you been on Westow Street? — Gab, Cinn","soft":"Fwiw the Gail's opening is the moment a referral game earns its keep — one customer plays, sends a treat to a friend who's never been, two come back. They have an app; you have the better coffee. Curious, what's the biggest counter headache right now? — Gab, Cinn","reengage":""}},
+            {name:"Notes Coffee",address:"Moorgate",website:"",instagram:"",email:"",score:7,tier:1,hook:"Blank Street newest London location at 101 Moorgate (live). Notes is a well-regarded indie next door — direct competitor moved in. TripAdvisor top-rated indie.",status:"trigger-drafted",strategy:"chain_nearby",trigger:"Blank Street opened nearby",scripts:{"first":"The Moorgate room is a proper specialty holdout — how's the new Blank Street next door changed the morning rush, if at all? — Gab, Cinn","soft":"Fwiw Blank Street doesn't win on coffee — they win on data. Every customer who taps their app is one they don't pay to reach again. The counter you already have can do the same thing, gamified: 5-sec game, one email, one customer you can bring back. Curious, what's the biggest counter headache right now? — Gab, Cinn","reengage":""}},
+            {name:"Darkhorse Espresso",address:"Moorgate / London Wall",website:"",instagram:"",email:"",score:7,tier:1,hook:"Blank Street at 101 Moorgate + Gail's largest London shop at The Broadway. Darkhorse is on the corner of Moorgate/London Wall per Brian's Coffee Spot. Two chain events stacking.",status:"trigger-researched",strategy:"chain_nearby",trigger:"Gail's Bakery opening on Westow Hill",scripts:null},
+            {name:"Forbes & Hamilton Coffee House",address:"London Wall / Liverpool Street",website:"",instagram:"",email:"",score:6,tier:1,hook:"Near Moorgate/Liverpool St corridor per Londonaire feature. Blank Street + Gail's Broadway both within walking distance.",status:"trigger-researched",strategy:"chain_nearby",trigger:"Gail's Bakery opening on Westow Hill",scripts:null},
+            {name:"Kamari (The Authentic Greek)",address:"Crystal Palace Triangle",website:"",instagram:"",email:"",score:6,tier:2,hook:"Crystal Palace Gail's opening on Westow Hill. Kamari listed at 25 Westow Street (StreetLife). Greek specialist. ⚠️ verify IG before outreach.",status:"trigger-researched",strategy:"chain_nearby",trigger:"Gail's Bakery opening on Westow Hill",scripts:null},
+            {name:"Crespidia",address:"Crystal Palace Triangle",website:"",instagram:"",email:"",score:6,tier:2,hook:"Crystal Palace Gail's opening on Westow Hill. Listed in StreetLife CP roundup. ⚠️ verify IG before outreach.",status:"trigger-researched",strategy:"chain_nearby",trigger:"Gail's Bakery opening on Westow Hill",scripts:null}
+        ];
+
+        const CHECKLIST = [
+            {id:"cluster-cp",label:"Cluster Crystal Palace 5 into Close Friends"},
+            {id:"post-story",label:"Post the chain-down-the-road story"},
+            {id:"dm-laura",label:"DM Laura (Brown & Green) — priority",priority:true},
+            {id:"remove-24h",label:"Remove cluster from Close Friends after 24h"},
+            {id:"resolve-handles",label:"Resolve ⚠️ IG handles — walk the Triangle"}
+        ];
+
+        // ===== Render stats =====
+        function renderStats() {
+            const total = LEADS.length;
+            const actionable = LEADS.filter(l => l.status === "trigger-drafted").length;
+            const top = Math.max(...LEADS.map(l => l.score));
+            const gaps = LEADS.filter(l => !l.instagram).length;
+            document.getElementById('stats').innerHTML = `
+                <span class="pip"><strong>${total}</strong> LEADS</span>
+                <span class="pip"><strong>${actionable}</strong> ACTIONABLE</span>
+                <span class="pip">TOP SCORE <strong>${top}/10</strong></span>
+                <span class="pip warn">⚠️ <strong>${gaps}</strong> HANDLE GAPS</span>
+            `;
+            document.getElementById('meta').textContent = `Last updated ${LAST_UPDATED} · Sorted by score within strategy`;
+        }
+
+        // ===== Render checklist with localStorage =====
+        function renderChecklist() {
+            const ul = document.getElementById('checklist');
+            ul.innerHTML = CHECKLIST.map(item => {
+                const checked = localStorage.getItem('cinn-check-' + item.id) === '1';
+                return `<li data-id="${item.id}" class="${checked ? 'done' : ''}">
+                    <input type="checkbox" id="${item.id}" ${checked ? 'checked' : ''}>
+                    <label for="${item.id}">${item.label}${item.priority ? '<span class="priority">★ priority</span>' : ''}</label>
+                </li>`;
+            }).join('');
+            // Listen on the checkbox change event (fires for click, keyboard, AND label click — exactly once)
+            ul.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', e => {
+                    // Stop the label's click from re-triggering after the native toggle
+                    e.stopPropagation();
+                    const li = cb.closest('li');
+                    localStorage.setItem('cinn-check-' + li.dataset.id, cb.checked ? '1' : '0');
+                    li.classList.toggle('done', cb.checked);
+                });
+            });
+        }
+
+        // ===== Render lead cards =====
+        function scoreClass(s) { return s >= 9 ? 'high' : s >= 7 ? 'mid' : 'low'; }
+        function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function strategyLabel(s) { return s === 'chain_nearby' ? '🔥 CHAIN NEARBY' : '🌧️ SLOW SEASON'; }
+
+        function renderCards() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = LEADS.map((lead, i) => {
+                const hasIG = !!lead.instagram;
+                const hasEmail = !!lead.email;
+                const drafted = lead.status === 'trigger-drafted';
+                const hasScripts = drafted && lead.scripts;
+                const triggerShort = lead.trigger.length > 60 ? lead.trigger.substring(0,57) + '…' : lead.trigger;
+                const cluster = lead.address.includes('Crystal Palace') ? 'CRYSTAL PALACE' :
+                                lead.address.includes('Moorgate') || lead.address.includes('London Wall') || lead.address.includes('Liverpool') ? 'MOORGATE / CITY' :
+                                'CENTRAL LONDON';
+                return `<div class="card" data-strategy="${lead.strategy}" data-has-ig="${hasIG}" data-index="${i}">
+                    <div class="card-top">
+                        <div class="card-name">${escapeHtml(lead.name)}</div>
+                        <div class="score ${scoreClass(lead.score)}">${lead.score}/10</div>
+                    </div>
+                    <span class="cluster-tag">${strategyLabel(lead.strategy)} · ${cluster}</span>
+                    <div class="trigger">${escapeHtml(triggerShort)}</div>
+                    <div class="status-row">
+                        <span class="${hasIG ? 'ok' : 'warn'}">${hasIG ? '✅ ' + escapeHtml(lead.instagram) : '⚠️ IG UNCONFIRMED'}</span>
+                        ${hasEmail ? `<span class="ok">✉️ ${escapeHtml(lead.email)}</span>` : ''}
+                        <span class="tier-badge">TIER ${lead.tier}</span>
+                        ${!drafted ? '<span class="muted">RESEARCHED</span>' : ''}
+                    </div>
+                    ${hasScripts ? `<button class="scripts-toggle" data-toggle="${i}">DM Scripts</button>
+                    <div class="scripts" id="scripts-${i}">
+                        <div class="script-block" data-copy="${escapeHtml(lead.scripts.first)}">
+                            <span class="kind">First DM — reply to their story (Primary inbox)</span>
+                            ${escapeHtml(lead.scripts.first)}
+                            <span class="copy-hint">Click to copy</span>
+                        </div>
+                        <div class="script-block" data-copy="${escapeHtml(lead.scripts.soft)}">
+                            <span class="kind">Soft pitch — only after they reply</span>
+                            ${escapeHtml(lead.scripts.soft)}
+                            <span class="copy-hint">Click to copy</span>
+                        </div>
+                        <div class="script-block" data-copy="${escapeHtml(lead.scripts.reengage)}">
+                            <span class="kind">Re-engagement — 6–8 weeks</span>
+                            ${escapeHtml(lead.scripts.reengage)}
+                            <span class="copy-hint">Click to copy</span>
+                        </div>
+                    </div>` : (drafted ? '<div class="no-script">No script yet</div>' : '<div class="no-script">Researched — no script</div>')}
+                </div>`;
+            }).join('');
+
+            // Wire script toggles
+            grid.querySelectorAll('.scripts-toggle').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const i = btn.dataset.toggle;
+                    const scripts = document.getElementById('scripts-' + i);
+                    btn.classList.toggle('open');
+                    scripts.classList.toggle('open');
+                });
+            });
+            // Wire click-to-copy
+            grid.querySelectorAll('.script-block').forEach(block => {
+                block.addEventListener('click', async () => {
+                    const text = block.dataset.copy.replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        block.classList.add('copied');
+                        const hint = block.querySelector('.copy-hint');
+                        const orig = hint.textContent;
+                        hint.textContent = '✓ Copied';
+                        setTimeout(() => { block.classList.remove('copied'); hint.textContent = orig; }, 1200);
+                    } catch(e) {
+                        hint.textContent = 'Copy failed — select manually';
+                    }
+                });
+            });
+        }
+
+        // ===== Filters =====
+        function applyFilter(f) {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.filter === f);
+            });
+            document.querySelectorAll('.card').forEach(card => {
+                const i = parseInt(card.dataset.index);
+                const lead = LEADS[i];
+                let show = true;
+                if (f === 'chain_nearby' || f === 'slow_season') show = lead.strategy === f;
+                else if (f === 'ready') show = !!lead.instagram;
+                else if (f === 'needs-handle') show = !lead.instagram;
+                card.classList.toggle('hidden', !show);
+            });
+        }
+        function wireFilters() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => applyFilter(btn.dataset.filter));
+            });
+        }
+
+        // ===== Init =====
+        renderStats();
+        renderChecklist();
+        renderCards();
+        wireFilters();
+        applyFilter('chain_nearby'); // default to the active focus on load
+    </script>
+</body>
+</html>
